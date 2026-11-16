@@ -1,0 +1,40 @@
+{
+  "name": "clinrev-standalone",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ClinRev AI running outside the Claude artifact runtime: compatibility shim + Node/Postgres backend with OIDC auth.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "vendor": "node tools/copy-vendor.js",
+    "make-index": "node tools/make-index.js original/clinrev-ai.html",
+    "start": "node server/index.js",
+    "dev": "AUTH_MODE=dev node server/index.js",
+    "migrate": "node server/migrate-cli.js",
+    "import": "node tools/import-artifact-export.js",
+    "test:e2e": "node test/e2e.mjs",
+    "test:oidc": "node test/oidc-e2e.mjs",
+    "test:cc": "node test/critical-care.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^1.1.2",
+    "@anthropic-ai/sdk": "^1.8.0",
+    "compression": "^1.8.2",
+    "connect-pg-simple": "^10.0.0",
+    "express": "^5.3.0",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "openid-client": "^6.8.9",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "docx": "8.5.0",
+    "mammoth": "1.6.0",
+    "oidc-provider": "^9.14.0",
+    "pdfjs-dist": "3.11.174",
+    "qrcode-generator": "1.4.4",
+    "xlsx": "0.18.5"
+  }
+}

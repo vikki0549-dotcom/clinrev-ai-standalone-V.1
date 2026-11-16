@@ -1,0 +1,51 @@
+# Caddy reverse proxy with automatic HTTPS (Let's Encrypt / ZeroSSL).
+# APP_DOMAIN and ACME_EMAIL come from the environment (see docker-compose.yml).
+{
+	email {$ACME_EMAIL}
+	# Uncomment while testing DNS/firewall to avoid Let's Encrypt rate limits:
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+{$APP_DOMAIN} {
+	# Security headers (the app also sets CSP, HSTS, etc.; these are a backstop).
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		-Server
+		-Via
+	}
+
+	# Optional extra privacy: allow only your office / VPN egress IPs.
+	# @outside not remote_ip 203.0.113.0/24 198.51.100.7/32
+	# respond @outside "Forbidden" 403
+
+	# Request bodies: scanned pages for AI can be large; everything else is small.
+	request_body {
+		max_size 30MB
+	}
+
+	reverse_proxy {
+		# Spread load over every "app" replica (Docker DNS returns one A record each).
+		dynamic a {
+			name app
+			port 3000
+			refresh 10s
+		}
+		lb_policy round_robin
+		lb_try_duration 5s
+		health_uri /healthz
+		health_interval 15s
+		# Stream Server-Sent Events (live updates, AI streaming) without buffering.
+		flush_interval -1
+		transport http {
+			read_timeout 0
+			write_timeout 0
+		}
+	}
+
+	# No access log on purpose: request URLs/queries can carry identifiers.
+	# The app writes an audit_log table in Postgres instead.
+}
